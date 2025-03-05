@@ -1,10 +1,10 @@
 import { getContext, setContext } from "svelte";
-import { PostController } from "./posts.svelte";
+import { WebsiteController } from "./website.svelte";
 
 export class Database {
   db: IDBDatabase | undefined = $state();
   constructor() {
-    const request = indexedDB.open("posts", 1);
+    const request = indexedDB.open("public", 1);
 
     request.onerror = (event) => {
       console.log("error: ", event);
@@ -17,7 +17,7 @@ export class Database {
     request.onupgradeneeded = () => {
       const db = request.result;
 
-      PostController.migrate(db);
+      WebsiteController.migrate(db);
     };
   }
 }
