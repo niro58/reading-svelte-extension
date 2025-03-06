@@ -3,29 +3,35 @@
     Folder,
     ChevronRight,
     ChevronDown,
-    Clock,
     BookOpen,
     MoreHorizontal,
     Edit,
     Trash2,
     ChevronUp,
+    AlertCircle,
+    Book,
+    Archive,
   } from "lucide-svelte";
   import { ReadingStatus, type ReadingFolder, type Website } from "../types";
-  import * as Tooltip from "./ui/tooltip/index";
   import { Badge } from "./ui/badge";
   import * as DropdownMenu from "./ui/dropdown-menu/index";
   import { Button } from "./ui/button";
-  import WebsiteItem from "./website-item.svelte";
+  import CustomDialog from "./custom-dialog.svelte";
+  import Input from "./ui/input/input.svelte";
 
   interface Props {
     name: string;
     folder: ReadingFolder;
-    onToggleFolder: (folderId: string) => void;
-    onToggleShowAll: (folderId: string) => void;
-    onUpdateWebsiteStatus: (folderId: string, websiteId: string) => void;
-    onToggleUrgency: (folderId: string, websiteId: string) => void;
-    onDeleteWebsite: (folderId: string, websiteId: string) => void;
-    onDeleteFolder: (folderId: string) => void;
+    onToggleFolder: (folderName: string) => void;
+    onToggleShowAll: (folderName: string) => void;
+    onUpdateWebsiteStatus: (
+      folderName: string,
+      websiteId: number,
+      status: ReadingStatus
+    ) => void;
+    onDeleteWebsite: (websiteId: number, folderName: string) => void;
+    onDeleteFolder: (folderName: string) => void;
+    onUpdateFolderName: (folderName: string, newName: string) => void;
   }
   const {
     name,
@@ -33,15 +39,86 @@
     onToggleFolder,
     onToggleShowAll,
     onUpdateWebsiteStatus,
-    onToggleUrgency,
     onDeleteWebsite,
     onDeleteFolder,
+    onUpdateFolderName,
   }: Props = $props();
   const countByStatus = (status: ReadingStatus) => {
-    return folder.websites.filter((w: Website) => w.status === status).length;
+    return folder.websites.filter((w) => w.status === status).length;
   };
+
+  let newFolderName = $state("");
+  let isOpenRenameDialog = $state(false);
+
+  function filterWebsites(
+    excludeState: ReadingStatus,
+    limit?: number
+  ): Website[] {
+    return folder.websites
+      .filter((w) => w.status !== excludeState)
+      .slice(0, limit);
+  }
 </script>
 
+{#snippet websiteItem(website: Website)}
+  <div
+    class="px-2 py-1 rounded-md flex items-center justify-between hover:bg-muted"
+  >
+    <div class="flex items-center overflow-hidden min-w-0 flex-1 gap-2">
+      <Button
+        variant="outline"
+        size="icon"
+        class="h-6 w-6 flex-shrink-0"
+        onclick={() => {
+          onDeleteWebsite(website.id, website.folderName);
+        }}
+      >
+        <Trash2 class="h-4 w-4 text-red-500" />
+      </Button>
+      <img
+        src={website.favicon || "/placeholder.svg"}
+        alt=""
+        class="h-4 w-4 mr-2 flex-shrink-0"
+      />
+      <span class="truncate text-sm">{website.title}</span>
+    </div>
+    <div class="flex items-center gap-1 ml-2">
+      <Button
+        variant="outline"
+        size="icon"
+        class="h-6 w-6 flex-shrink-0"
+        onclick={() => {
+          const status =
+            website.status === ReadingStatus.TO_READ
+              ? ReadingStatus.URGENT
+              : ReadingStatus.TO_READ;
+
+          onUpdateWebsiteStatus(website.folderName, website.id, status);
+        }}
+      >
+        {#if website.status === ReadingStatus.TO_READ}
+          <AlertCircle class="h-4 w-4 text-red-500" />
+        {:else if website.status === ReadingStatus.URGENT}
+          <Book class="h-4 w-4 text-blue-500" />
+        {/if}
+      </Button>
+      <Button
+        variant="outline"
+        size="icon"
+        class="h-6 w-6 flex-shrink-0 border-green-500"
+        onclick={() => {
+          onUpdateWebsiteStatus(
+            website.folderName,
+            website.id,
+            ReadingStatus.ARCHIVED
+          );
+        }}
+      >
+        <Archive class="h-4 w-4 text-green-500" />
+      </Button>
+    </div>
+  </div>
+{/snippet}
 <div class="border rounded-md">
   <button
     class="py-2 px-2 flex items-center justify-between cursor-pointer hover:bg-muted w-full"
@@ -58,33 +135,14 @@
     </div>
     <div class="flex items-center gap-2 ml-2">
       <div class="flex gap-1">
-        <Tooltip.Provider>
-          <Tooltip.Root>
-            <Tooltip.Trigger>
-              <Badge variant="outline" class="text-xs">
-                <Clock class="h-3 w-3 mr-1 text-blue-500" />
-                {countByStatus(ReadingStatus.TO_READ)}
-              </Badge>
-            </Tooltip.Trigger>
-            <Tooltip.Content>
-              <p>To Read</p>
-            </Tooltip.Content>
-          </Tooltip.Root>
-        </Tooltip.Provider>
-
-        <Tooltip.Provider>
-          <Tooltip.Root>
-            <Tooltip.Trigger>
-              <Badge variant="outline" class="text-xs">
-                <BookOpen class="h-3 w-3 mr-1 text-green-500" />
-                {countByStatus(ReadingStatus.READ)}
-              </Badge>
-            </Tooltip.Trigger>
-            <Tooltip.Content>
-              <p>Read</p>
-            </Tooltip.Content>
-          </Tooltip.Root>
-        </Tooltip.Provider>
+        <Badge variant="outline" class="text-xs">
+          <AlertCircle class="h-3 w-3 mr-1 text-primary" />
+          {countByStatus(ReadingStatus.URGENT)}
+        </Badge>
+        <Badge variant="outline" class="text-xs">
+          <BookOpen class="h-3 w-3 mr-1 text-blue-500" />
+          {countByStatus(ReadingStatus.TO_READ)}
+        </Badge>
       </div>
 
       <DropdownMenu.Root>
@@ -96,7 +154,7 @@
           {/snippet}
         </DropdownMenu.Trigger>
         <DropdownMenu.Content align="end">
-          <DropdownMenu.Item>
+          <DropdownMenu.Item onclick={() => (isOpenRenameDialog = true)}>
             <Edit class="h-4 w-4 mr-2" />
             Rename
           </DropdownMenu.Item>
@@ -112,53 +170,52 @@
     </div>
   </button>
   {#if folder.expanded}
+    {@const websites : Website[] = filterWebsites(ReadingStatus.ARCHIVED, folder.showAll ? undefined : 3)}
     <div class="py-1">
-      {#if folder.websites.length === 0}
+      {#if websites.length === 0}
         <div class="py-2 text-center text-sm text-muted-foreground">
           No websites in this folder
         </div>
-      {:else}{/if}
-      <div>
-        {#if folder.showAll}
-          {#each folder.websites as website}
-            <WebsiteItem
-              {website}
-              folderId={name}
-              onUpdateStatus={onUpdateWebsiteStatus}
-              {onToggleUrgency}
-              onDelete={onDeleteWebsite}
-            />
+      {:else}
+        <div>
+          {#each filterWebsites(ReadingStatus.ARCHIVED, folder.showAll ? undefined : 3) as website (website.id)}
+            {@render websiteItem(website)}
           {/each}
-        {:else}
-          {#each folder.websites.slice(0, 3) as website}
-            <WebsiteItem
-              {website}
-              folderId={name}
-              onUpdateStatus={onUpdateWebsiteStatus}
-              {onToggleUrgency}
-              onDelete={onDeleteWebsite}
-            />
-          {/each}
-          <Button
-            variant="ghost"
-            size="sm"
-            class="w-full mt-1"
-            onclick={() => onToggleShowAll(name)}
-          >
-            {#if folder.showAll}
-              <div>
-                <ChevronUp class="h-4 w-4 mr-2" />
-                Show Less
-              </div>
-            {:else}
-              <div>
-                <ChevronDown class="h-4 w-4 mr-2" />
-                Show All ({folder.websites.length})
-              </div>
-            {/if}
-          </Button>
-        {/if}
-      </div>
+
+          {#if folder.websites.length > 3}
+            <Button
+              variant="ghost"
+              size="sm"
+              class="w-full mt-1"
+              onclick={() => onToggleShowAll(name)}
+            >
+              {#if folder.showAll}
+                <div>
+                  <ChevronUp class="h-4 w-4 mr-2" />
+                  Show Less
+                </div>
+              {:else}
+                <div>
+                  <ChevronDown class="h-4 w-4 mr-2" />
+                  Show All ({folder.websites.length})
+                </div>
+              {/if}
+            </Button>
+          {/if}
+        </div>
+      {/if}
     </div>
   {/if}
 </div>
+
+<CustomDialog
+  title="New Folder Name"
+  onAccept={() => {
+    onUpdateFolderName(name, newFolderName);
+  }}
+  bind:isOpen={isOpenRenameDialog}
+>
+  {#snippet body()}
+    <Input bind:value={newFolderName} />
+  {/snippet}
+</CustomDialog>

@@ -18,10 +18,78 @@ export class WebsiteController {
       store.createIndex("status", "status", { unique: false });
     }
   }
+  async update(website: Website): Promise<Result<boolean>> {
+    if (!this.db)
+      return {
+        success: false,
+        error: "rip",
+      };
 
+    const transaction = this.db.transaction("websites", "readwrite");
+    const store = transaction.objectStore("websites");
+    const req = store.put(website);
+
+    return new Promise((resolve, reject) => {
+      req.onsuccess = () => {
+        resolve({ success: true, data: true });
+      };
+      req.onerror = () => {
+        resolve({ success: false, error: "rip" });
+      };
+    });
+  }
+  async delete(id: number): Promise<Result<boolean>> {
+    if (!this.db)
+      return {
+        success: false,
+        error: "rip",
+      };
+
+    const transaction = this.db.transaction("websites", "readwrite");
+    const store = transaction.objectStore("websites");
+    const req = store.delete(id);
+
+    return new Promise((resolve, reject) => {
+      req.onsuccess = () => {
+        resolve({ success: true, data: true });
+      };
+      req.onerror = () => {
+        resolve({ success: false, error: "rip" });
+      };
+    });
+  }
+  async deleteFolder(folderName: string): Promise<Result<boolean>> {
+    if (!this.db) {
+      return {
+        success: false,
+        error: "rip",
+      };
+    }
+
+    const transaction = this.db.transaction("websites", "readwrite");
+    const store = transaction.objectStore("websites");
+    const index = store.index("folderName");
+    const range = IDBKeyRange.only(folderName);
+    const req = index.openCursor(range);
+
+    return new Promise((resolve, reject) => {
+      req.onsuccess = (event) => {
+        const cursor = (event.target as IDBRequest<IDBCursorWithValue>).result;
+        if (cursor) {
+          cursor.delete();
+          cursor.continue();
+        } else {
+          resolve({ success: true, data: true });
+        }
+      };
+      req.onerror = () => {
+        resolve({ success: false, error: "rip" });
+      };
+    });
+  }
   async add(
     model: Omit<Website, "id" | "created_at">
-  ): Promise<Result<boolean>> {
+  ): Promise<Result<Website>> {
     if (!this.db)
       return {
         success: false,
@@ -34,7 +102,10 @@ export class WebsiteController {
 
     return new Promise((resolve, reject) => {
       req.onsuccess = () => {
-        resolve({ success: true, data: true });
+        resolve({
+          success: true,
+          data: { ...model, id: req.result as number },
+        });
       };
       req.onerror = () => {
         resolve({ success: false, error: "rip" });
@@ -84,6 +155,38 @@ export class WebsiteController {
           success: false,
           error: "rip",
         });
+      };
+    });
+  }
+  async updateFolderName(
+    name: string,
+    newName: string
+  ): Promise<Result<boolean>> {
+    if (!this.db)
+      return {
+        success: false,
+        error: "rip",
+      };
+
+    const transaction = this.db.transaction("websites", "readwrite");
+    const store = transaction.objectStore("websites");
+    const index = store.index("folderName");
+    const range = IDBKeyRange.only(name);
+    const req = index.openCursor(range);
+
+    return new Promise((resolve, reject) => {
+      req.onsuccess = (event) => {
+        const cursor = (event.target as IDBRequest<IDBCursorWithValue>).result;
+        if (cursor) {
+          cursor.value.folderName = newName;
+          cursor.update(cursor.value);
+          cursor.continue();
+        } else {
+          resolve({ success: true, data: true });
+        }
+      };
+      req.onerror = () => {
+        resolve({ success: false, error: "rip" });
       };
     });
   }
