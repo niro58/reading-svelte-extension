@@ -1,5 +1,5 @@
 import { getContext, setContext } from "svelte";
-import { WebsiteController } from "./website.svelte";
+import { WebsiteRepository } from "./website_repository.svelte";
 
 export class Database {
   db: IDBDatabase | undefined = $state();
@@ -17,7 +17,7 @@ export class Database {
     request.onupgradeneeded = () => {
       const db = request.result;
 
-      WebsiteController.migrate(db);
+      WebsiteRepository.migrate(db);
     };
   }
 }

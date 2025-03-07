@@ -18,46 +18,24 @@
   import { Button } from "./ui/button";
   import CustomDialog from "./custom-dialog.svelte";
   import Input from "./ui/input/input.svelte";
+  import { getApp } from "$lib/app_controller.svelte";
 
   interface Props {
     name: string;
     folder: ReadingFolder;
-    onToggleFolder: (folderName: string) => void;
-    onToggleShowAll: (folderName: string) => void;
-    onUpdateWebsiteStatus: (
-      folderName: string,
-      websiteId: number,
-      status: ReadingStatus
-    ) => void;
-    onDeleteWebsite: (websiteId: number, folderName: string) => void;
-    onDeleteFolder: (folderName: string) => void;
-    onUpdateFolderName: (folderName: string, newName: string) => void;
   }
-  const {
-    name,
-    folder,
-    onToggleFolder,
-    onToggleShowAll,
-    onUpdateWebsiteStatus,
-    onDeleteWebsite,
-    onDeleteFolder,
-    onUpdateFolderName,
-  }: Props = $props();
+  const { name, folder }: Props = $props();
   const countByStatus = (status: ReadingStatus) => {
     return folder.websites.filter((w) => w.status === status).length;
   };
+  const websites = $derived(
+    folder.websites.filter((w) => w.status !== ReadingStatus.ARCHIVED)
+  );
 
   let newFolderName = $state("");
   let isOpenRenameDialog = $state(false);
 
-  function filterWebsites(
-    excludeState: ReadingStatus,
-    limit?: number
-  ): Website[] {
-    return folder.websites
-      .filter((w) => w.status !== excludeState)
-      .slice(0, limit);
-  }
+  const app = getApp();
 </script>
 
 {#snippet websiteItem(website: Website)}
@@ -70,7 +48,7 @@
         size="icon"
         class="h-6 w-6 flex-shrink-0"
         onclick={() => {
-          onDeleteWebsite(website.id, website.folderName);
+          app.deleteWebsite(website.id, website.folderName);
         }}
       >
         <Trash2 class="h-4 w-4 text-red-500" />
@@ -80,7 +58,9 @@
         alt=""
         class="h-4 w-4 mr-2 flex-shrink-0"
       />
-      <span class="truncate text-sm">{website.title}</span>
+      <a href={website.url} target="_blank" class="truncate">
+        {website.title}
+      </a>
     </div>
     <div class="flex items-center gap-1 ml-2">
       <Button
@@ -93,7 +73,7 @@
               ? ReadingStatus.URGENT
               : ReadingStatus.TO_READ;
 
-          onUpdateWebsiteStatus(website.folderName, website.id, status);
+          app.updateWebsiteStatus(website.folderName, website.id, status);
         }}
       >
         {#if website.status === ReadingStatus.TO_READ}
@@ -107,7 +87,7 @@
         size="icon"
         class="h-6 w-6 flex-shrink-0 border-green-500"
         onclick={() => {
-          onUpdateWebsiteStatus(
+          app.updateWebsiteStatus(
             website.folderName,
             website.id,
             ReadingStatus.ARCHIVED
@@ -122,7 +102,7 @@
 <div class="border rounded-md">
   <button
     class="py-2 px-2 flex items-center justify-between cursor-pointer hover:bg-muted w-full"
-    onclick={() => onToggleFolder(name)}
+    onclick={() => app.toggleFolder(name)}
   >
     <div class="flex items-center min-w-0 flex-1">
       {#if folder.expanded}
@@ -159,7 +139,7 @@
             Rename
           </DropdownMenu.Item>
           <DropdownMenu.Item
-            onclick={() => onDeleteFolder(name)}
+            onclick={() => app.deleteFolder(name)}
             class="text-destructive"
           >
             <Trash2 class="h-4 w-4 mr-2" />
@@ -170,7 +150,6 @@
     </div>
   </button>
   {#if folder.expanded}
-    {@const websites : Website[] = filterWebsites(ReadingStatus.ARCHIVED, folder.showAll ? undefined : 3)}
     <div class="py-1">
       {#if websites.length === 0}
         <div class="py-2 text-center text-sm text-muted-foreground">
@@ -178,7 +157,7 @@
         </div>
       {:else}
         <div>
-          {#each filterWebsites(ReadingStatus.ARCHIVED, folder.showAll ? undefined : 3) as website (website.id)}
+          {#each websites as website}
             {@render websiteItem(website)}
           {/each}
 
@@ -187,19 +166,17 @@
               variant="ghost"
               size="sm"
               class="w-full mt-1"
-              onclick={() => onToggleShowAll(name)}
+              onclick={() => app.toggleShowAll(name)}
             >
-              {#if folder.showAll}
-                <div>
+              <div class="flex flex-row gap-2 items-center justify-center">
+                {#if folder.showAll}
                   <ChevronUp class="h-4 w-4 mr-2" />
                   Show Less
-                </div>
-              {:else}
-                <div>
+                {:else}
                   <ChevronDown class="h-4 w-4 mr-2" />
                   Show All ({folder.websites.length})
-                </div>
-              {/if}
+                {/if}
+              </div>
             </Button>
           {/if}
         </div>
@@ -211,7 +188,8 @@
 <CustomDialog
   title="New Folder Name"
   onAccept={() => {
-    onUpdateFolderName(name, newFolderName);
+    app.updateFolderName(name, newFolderName);
+    newFolderName = "";
   }}
   bind:isOpen={isOpenRenameDialog}
 >

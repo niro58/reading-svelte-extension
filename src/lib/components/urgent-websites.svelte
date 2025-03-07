@@ -2,13 +2,24 @@
   import { AlertCircle } from "lucide-svelte";
   import { ReadingStatus, type Website } from "../types";
   import { Badge } from "./ui/badge";
-  import { getWebsiteController } from "$lib/website.svelte";
-  import { onMount } from "svelte";
+  import { getApp } from "$lib/app_controller.svelte";
 
-  const { websites }: { websites: Website[] } = $props();
+  const app = getApp();
+
+  const urgentWebsites: Website[] = $derived.by(() => {
+    let webs: Website[] = [];
+    if (app) {
+      app.folders.forEach((f) => {
+        webs = webs.concat(
+          f.websites.filter((w) => w.status === ReadingStatus.URGENT)
+        );
+      });
+    }
+    return webs;
+  });
 </script>
 
-{#if websites.length === 0}
+{#if urgentWebsites.length === 0}
   <div
     class="flex flex-col items-center justify-center h-full text-muted-foreground p-4"
   >
@@ -17,8 +28,8 @@
     <p class="text-sm">Mark websites as urgent to see them here</p>
   </div>
 {/if}
-<div class="space-y-2">
-  {#each websites as website}
+<div class="flex flex-col gap-2">
+  {#each urgentWebsites as website}
     <a
       href={website.url}
       class="transition-colors hover:bg-primary/50 active:bg-primary/80"

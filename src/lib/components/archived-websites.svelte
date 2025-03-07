@@ -3,21 +3,23 @@
   import { ReadingStatus, type Website } from "../types";
   import { Badge } from "./ui/badge";
   import Button from "./ui/button/button.svelte";
+  import { getApp } from "$lib/app_controller.svelte";
 
-  const {
-    websites,
-    onUpdateWebsiteStatus,
-  }: {
-    websites: Website[];
-    onUpdateWebsiteStatus: (
-      folderName: string,
-      websiteId: number,
-      status: ReadingStatus
-    ) => void;
-  } = $props();
+  const app = getApp();
+  const archivedWebsites: Website[] = $derived.by(() => {
+    let webs: Website[] = [];
+    if (app) {
+      app.folders.forEach((f) => {
+        webs = webs.concat(
+          f.websites.filter((w) => w.status === ReadingStatus.ARCHIVED)
+        );
+      });
+    }
+    return webs;
+  });
 </script>
 
-{#if websites.length === 0}
+{#if archivedWebsites.length === 0}
   <div
     class="flex flex-col items-center justify-center h-full text-muted-foreground p-4"
   >
@@ -26,8 +28,8 @@
     <p class="text-sm">Mark websites as read to see them here</p>
   </div>
 {/if}
-<div class="space-y-2">
-  {#each websites as website}
+<div class="flex flex-col gap-2">
+  {#each archivedWebsites as website}
     <div class="border rounded-md p-2">
       <div class="flex items-center justify-between">
         <div class="flex items-center overflow-hidden">
@@ -38,13 +40,13 @@
           />
           <span class="truncate text-sm">{website.title}</span>
         </div>
-        <div>
+        <div class="flex flex-row gap-2">
           <Badge variant="outline" class="text-xs">
             {website.folderName}
           </Badge>
           <Button
             onclick={() => {
-              onUpdateWebsiteStatus(
+              app.updateWebsiteStatus(
                 website.folderName,
                 website.id,
                 ReadingStatus.TO_READ

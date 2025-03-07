@@ -21,6 +21,7 @@ export interface Website {
   url: string;
   favicon?: string;
   status: ReadingStatus;
+  createdAt: number;
 }
 
 export interface ReadingFolder {

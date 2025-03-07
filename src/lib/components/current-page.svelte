@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { ReadingStatus, type ReadingFolder, type Website } from "$lib/types";
+  import { ReadingStatus, type Website } from "$lib/types";
   import { AlertCircle, Archive, BookOpen, Plus } from "lucide-svelte";
   import Button from "./ui/button/button.svelte";
   import { Label } from "./ui/label";
@@ -8,19 +8,9 @@
   import { onMount } from "svelte";
   import { getCurrentPage, type ChromePage } from "$lib/chrome";
   import CustomDialog from "./custom-dialog.svelte";
+  import { getApp } from "$lib/app_controller.svelte";
 
-  interface Props {
-    folders: { [name: string]: ReadingFolder };
-    onAddWebsite: (website: Omit<Website, "id" | "created_at">) => void;
-    onUpdateStatus: (
-      folderName: string,
-      websiteId: number,
-      status: ReadingStatus
-    ) => void;
-    onToggleUrgent: (website: Website) => void;
-  }
-  const { folders, onAddWebsite, onUpdateStatus, onToggleUrgent }: Props =
-    $props();
+  const app = getApp();
 
   let currentPage: ChromePage = $state({
     title: "",
@@ -31,7 +21,7 @@
 
   $effect(() => {
     if (currentPage) {
-      const found = Object.values(folders)
+      const found = Object.values(app.folders)
         .flatMap((f) => f.websites)
         .find((w) => w.url === currentPage?.url);
       currentWebsite = found || null;
@@ -40,7 +30,7 @@
   const handleAddWebsite = () => {
     if (!selectedFolder || !currentPage) return;
 
-    onAddWebsite({
+    app.addWebsite({
       title: currentPage.title,
       url: currentPage.url,
       status: ReadingStatus.TO_READ,
@@ -48,6 +38,7 @@
 
       folderName: selectedFolder,
     });
+    selectedFolder = "";
   };
   onMount(() => {
     getCurrentPage().then((res) => {
@@ -57,6 +48,7 @@
     });
   });
 </script>
+
 
 <div class="py-4 border-b space-y-4">
   {#if currentWebsite}
@@ -68,7 +60,7 @@
           disabled={currentWebsite.status === ReadingStatus.URGENT}
           onclick={() => {
             if (currentWebsite) {
-              onUpdateStatus(
+              app.updateWebsiteStatus(
                 currentWebsite.folderName,
                 currentWebsite.id,
                 ReadingStatus.URGENT
@@ -84,7 +76,7 @@
           disabled={currentWebsite.status === ReadingStatus.TO_READ}
           onclick={() => {
             if (currentWebsite) {
-              onUpdateStatus(
+              app.updateWebsiteStatus(
                 currentWebsite.folderName,
                 currentWebsite.id,
                 ReadingStatus.TO_READ
@@ -101,7 +93,7 @@
           disabled={currentWebsite.status === ReadingStatus.ARCHIVED}
           onclick={() => {
             if (currentWebsite) {
-              onUpdateStatus(
+              app.updateWebsiteStatus(
                 currentWebsite.folderName,
                 currentWebsite.id,
                 ReadingStatus.ARCHIVED
@@ -135,7 +127,7 @@
                   >{selectedFolder || "Select a folder"}</Select.Trigger
                 >
                 <Select.Content>
-                  {#each Object.entries(folders) as [name]}
+                  {#each app.folders as [name]}
                     <Select.Item value={name}>
                       {name}
                     </Select.Item>

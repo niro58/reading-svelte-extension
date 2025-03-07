@@ -1,8 +1,14 @@
 import { getContext, setContext } from "svelte";
 
 import type { ReadingFolder, ReadingStatus, Result, Website } from "./types";
+import { addMessage } from "./messages";
 
-export class WebsiteController {
+const Errors = Object.freeze({
+  NO_DB: "No database",
+  TRANSACTION_FAILED: "Transaction failed",
+});
+
+export class WebsiteRepository {
   db: IDBDatabase | undefined = $state();
   static migrate(db: IDBDatabase) {
     if (!db.objectStoreNames.contains("websites")) {
@@ -22,19 +28,22 @@ export class WebsiteController {
     if (!this.db)
       return {
         success: false,
-        error: "rip",
+        error: Errors.NO_DB,
       };
 
     const transaction = this.db.transaction("websites", "readwrite");
     const store = transaction.objectStore("websites");
-    const req = store.put(website);
+
+    const serializableWebsite = JSON.parse(JSON.stringify(website));
+
+    const req = store.put(serializableWebsite);
 
     return new Promise((resolve, reject) => {
       req.onsuccess = () => {
         resolve({ success: true, data: true });
       };
       req.onerror = () => {
-        resolve({ success: false, error: "rip" });
+        resolve({ success: false, error: Errors.TRANSACTION_FAILED });
       };
     });
   }
@@ -42,7 +51,7 @@ export class WebsiteController {
     if (!this.db)
       return {
         success: false,
-        error: "rip",
+        error: Errors.NO_DB,
       };
 
     const transaction = this.db.transaction("websites", "readwrite");
@@ -54,7 +63,7 @@ export class WebsiteController {
         resolve({ success: true, data: true });
       };
       req.onerror = () => {
-        resolve({ success: false, error: "rip" });
+        resolve({ success: false, error: Errors.TRANSACTION_FAILED });
       };
     });
   }
@@ -62,7 +71,7 @@ export class WebsiteController {
     if (!this.db) {
       return {
         success: false,
-        error: "rip",
+        error: Errors.NO_DB,
       };
     }
 
@@ -83,22 +92,20 @@ export class WebsiteController {
         }
       };
       req.onerror = () => {
-        resolve({ success: false, error: "rip" });
+        resolve({ success: false, error: Errors.TRANSACTION_FAILED });
       };
     });
   }
-  async add(
-    model: Omit<Website, "id" | "created_at">
-  ): Promise<Result<Website>> {
+  async add(model: Omit<Website, "id">): Promise<Result<Website>> {
     if (!this.db)
       return {
         success: false,
-        error: "rip",
+        error: Errors.NO_DB,
       };
 
     const transaction = this.db.transaction("websites", "readwrite");
     const store = transaction.objectStore("websites");
-    const req = store.add(JSON.parse(JSON.stringify(model)));
+    const req = store.add(model);
 
     return new Promise((resolve, reject) => {
       req.onsuccess = () => {
@@ -107,8 +114,9 @@ export class WebsiteController {
           data: { ...model, id: req.result as number },
         });
       };
-      req.onerror = () => {
-        resolve({ success: false, error: "rip" });
+      req.onerror = (e) => {
+        console.log(e);
+        resolve({ success: false, error: Errors.TRANSACTION_FAILED });
       };
     });
   }
@@ -116,7 +124,7 @@ export class WebsiteController {
     if (!this.db)
       return {
         success: false,
-        error: "rip",
+        error: Errors.NO_DB,
       };
     const transaction = this.db.transaction("websites", "readonly");
     const store = transaction.objectStore("websites");
@@ -129,7 +137,7 @@ export class WebsiteController {
       req.onerror = () => {
         resolve({
           success: false,
-          error: "rip",
+          error: Errors.TRANSACTION_FAILED,
         });
       };
     });
@@ -138,7 +146,7 @@ export class WebsiteController {
     if (!this.db)
       return {
         success: false,
-        error: "rip",
+        error: Errors.NO_DB,
       };
     const transaction = this.db.transaction("websites", "readonly");
     const store = transaction.objectStore("websites");
@@ -153,7 +161,7 @@ export class WebsiteController {
       req.onerror = () => {
         resolve({
           success: false,
-          error: "rip",
+          error: Errors.TRANSACTION_FAILED,
         });
       };
     });
@@ -165,7 +173,7 @@ export class WebsiteController {
     if (!this.db)
       return {
         success: false,
-        error: "rip",
+        error: Errors.NO_DB,
       };
 
     const transaction = this.db.transaction("websites", "readwrite");
@@ -186,19 +194,19 @@ export class WebsiteController {
         }
       };
       req.onerror = () => {
-        resolve({ success: false, error: "rip" });
+        resolve({ success: false, error: Errors.TRANSACTION_FAILED });
       };
     });
   }
 }
 
-const Website_CONTROLLER_SYMBOL = Symbol("Website_CONTROLLER");
+const WEBSITE_REPOSITORY_SYMBOL = Symbol("WEBSITE_REPOSITORY");
 
-export function setWebsiteController() {
-  return setContext(Website_CONTROLLER_SYMBOL, new WebsiteController());
+export function setWebsiteRepository() {
+  return setContext(WEBSITE_REPOSITORY_SYMBOL, new WebsiteRepository());
 }
-export function getWebsiteController() {
-  return getContext<ReturnType<typeof setWebsiteController>>(
-    Website_CONTROLLER_SYMBOL
+export function getWebsiteRepository() {
+  return getContext<ReturnType<typeof setWebsiteRepository>>(
+    WEBSITE_REPOSITORY_SYMBOL
   );
 }

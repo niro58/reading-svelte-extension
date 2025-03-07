@@ -30,14 +30,12 @@
       {/snippet}
     </Dialog.Trigger>
   {/if}
-  <Dialog.Content
-    class="data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] bg-background fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border p-6 shadow-lg duration-200 sm:rounded-lg"
-  >
+  <Dialog.Content>
     <Dialog.Header>
       <Dialog.Title>{title}</Dialog.Title>
     </Dialog.Header>
     {@render body()}
-    <Dialog.Footer>
+    <Dialog.Footer class="flex flex-row justify-between">
       <Dialog.Close>
         {#snippet children()}
           <Button
