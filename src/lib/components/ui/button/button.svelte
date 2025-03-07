@@ -17,6 +17,13 @@
           "bg-destructive text-destructive-foreground hover:bg-destructive/90",
         outline:
           "border-input bg-background hover:bg-accent hover:text-accent-foreground border",
+        outline_primary:
+          "border-primary border text-primary hover:bg-primary hover:text-primary-foreground",
+        outline_green:
+          "border-green-700 border text-green-700 hover:bg-green-700 hover:text-primary-foreground",
+        outline_blue:
+          "border-blue-700 border text-blue-700 hover:bg-blue-700 hover:text-primary-foreground",
+
         secondary:
           "bg-secondary text-secondary-foreground hover:bg-secondary/80",
         ghost: "hover:bg-accent hover:text-accent-foreground",

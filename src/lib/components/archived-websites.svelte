@@ -52,7 +52,7 @@
                 ReadingStatus.TO_READ
               );
             }}
-            variant="outline"
+            variant="outline_blue"
             size="icon"
             class="h-6 w-6 flex-shrink-0"
           >

@@ -19,6 +19,7 @@
   import CustomDialog from "./custom-dialog.svelte";
   import Input from "./ui/input/input.svelte";
   import { getApp } from "$lib/app_controller.svelte";
+  import { cn } from "$lib/utils";
 
   interface Props {
     name: string;
@@ -40,7 +41,10 @@
 
 {#snippet websiteItem(website: Website)}
   <div
-    class="px-2 py-1 rounded-md flex items-center justify-between hover:bg-muted"
+    class={cn(
+      "px-2 py-1 rounded-md flex items-center justify-between hover:bg-muted",
+      website.status === ReadingStatus.URGENT ? "bg-red-500/20" : ""
+    )}
   >
     <div class="flex items-center overflow-hidden min-w-0 flex-1 gap-2">
       <Button
@@ -53,18 +57,25 @@
       >
         <Trash2 class="h-4 w-4 text-red-500" />
       </Button>
-      <img
-        src={website.favicon || "/placeholder.svg"}
-        alt=""
-        class="h-4 w-4 mr-2 flex-shrink-0"
-      />
-      <a href={website.url} target="_blank" class="truncate">
+      <a
+        href={website.url}
+        title={website.url}
+        target="_blank"
+        class="truncate flex flex-row items-center"
+      >
+        <img
+          src={website.favicon || "/placeholder.svg"}
+          alt=""
+          class="h-4 w-4 mr-2 flex-shrink-0"
+        />
         {website.title}
       </a>
     </div>
     <div class="flex items-center gap-1 ml-2">
       <Button
-        variant="outline"
+        variant={website.status === ReadingStatus.TO_READ
+          ? "outline_primary"
+          : "outline_blue"}
         size="icon"
         class="h-6 w-6 flex-shrink-0"
         onclick={() => {
@@ -83,9 +94,9 @@
         {/if}
       </Button>
       <Button
-        variant="outline"
+        variant="outline_green"
         size="icon"
-        class="h-6 w-6 flex-shrink-0 border-green-500"
+        class="h-6 w-6 flex-shrink-0"
         onclick={() => {
           app.updateWebsiteStatus(
             website.folderName,
@@ -157,9 +168,15 @@
         </div>
       {:else}
         <div>
-          {#each websites as website}
-            {@render websiteItem(website)}
-          {/each}
+          {#if folder.showAll}
+            {#each websites as website}
+              {@render websiteItem(website)}
+            {/each}
+          {:else}
+            {#each websites.slice(0, 3) as website}
+              {@render websiteItem(website)}
+            {/each}
+          {/if}
 
           {#if folder.websites.length > 3}
             <Button

@@ -17,16 +17,8 @@
     url: "",
   });
   let selectedFolder = $state("");
-  let currentWebsite = $state<Website | null>(null);
+  let currentWebsite = $derived(app.findWebsite(currentPage.url));
 
-  $effect(() => {
-    if (currentPage) {
-      const found = Object.values(app.folders)
-        .flatMap((f) => f.websites)
-        .find((w) => w.url === currentPage?.url);
-      currentWebsite = found || null;
-    }
-  });
   const handleAddWebsite = () => {
     if (!selectedFolder || !currentPage) return;
 
@@ -44,11 +36,15 @@
     getCurrentPage().then((res) => {
       if (res) {
         currentPage = res;
+        console.log(currentPage)
       }
     });
   });
+  $effect(()=>{
+    console.log(currentWebsite)
+  })
+  // todo: bad choice by using maps, should use arrays
 </script>
-
 
 <div class="py-4 border-b space-y-4">
   {#if currentWebsite}
@@ -65,6 +61,8 @@
                 currentWebsite.id,
                 ReadingStatus.URGENT
               );
+
+              currentWebsite!.status = ReadingStatus.URGENT;
             }
           }}
         >
@@ -81,6 +79,7 @@
                 currentWebsite.id,
                 ReadingStatus.TO_READ
               );
+              currentWebsite!.status = ReadingStatus.TO_READ;
             }
           }}
         >
@@ -98,6 +97,7 @@
                 currentWebsite.id,
                 ReadingStatus.ARCHIVED
               );
+              currentWebsite!.status = ReadingStatus.ARCHIVED;
             }
           }}
         >

@@ -3,7 +3,7 @@ import { ReadingStatus, type ReadingFolder, type Website } from "./types";
 import { getWebsiteRepository } from "./website_repository.svelte";
 import { addMessage } from "./messages";
 import { SvelteMap, SvelteSet } from "svelte/reactivity";
-import { randomString } from "./utils";
+import { isValidUrl, randomString, trimUrl } from "./utils";
 
 export const blankWebsite: Omit<Website, "id" | "createdAt"> = {
   folderName: "",
@@ -12,10 +12,20 @@ export const blankWebsite: Omit<Website, "id" | "createdAt"> = {
   favicon: "/placeholder.svg?height=16&width=16",
   status: ReadingStatus.TO_READ,
 };
-
+//todo: rewrite to an array solution, didnt expect sveltemap to be that weird
 class AppController {
   folders = new SvelteMap<string, ReadingFolder>();
   websiteRepository = getWebsiteRepository();
+
+  findWebsite(url: string): Website | null {
+    for (const [_, folder] of this.folders) {
+      const foundWebsite = folder.websites.find((website) => website.url === url);
+      if (foundWebsite) {
+        return foundWebsite; // Return the found website directly
+      }
+    }
+    return null; 
+  }
 
   constructor() {
     this.websiteRepository.getAll().then((res) => {
@@ -23,6 +33,7 @@ class AppController {
         addMessage("warning", res.error);
         return;
       }
+
       res.data.forEach((website) => {
         const folderName = website.folderName || "default";
         if (!this.folders.has(folderName)) {
@@ -55,35 +66,20 @@ class AppController {
       this.folders.set(folderName, { ...folder }); // re-set to trigger reactivity
     }
   }
-  generateRandomWebsite(): Omit<Website, "id" | "createdAt"> {
-    return {
-      folderName: randomString(16),
-      title: randomString(16),
-      url: randomString(16),
-      status: ReadingStatus.TO_READ,
-    };
-  }
-  add() {
-    this.folders.set("default", {
-      websites: [
-        {
-          ...this.generateRandomWebsite(),
-          id: 1,
-          createdAt: 1,
-        },
-      ],
-      expanded: false,
-      showAll: false,
-    });
-  }
+
   // Add new website
   async addWebsite(website: Omit<Website, "id" | "createdAt">) {
-    // if (!website.title.trim() || !website.url.trim() || !website.folderName)
-    //   return;
+    website.url = trimUrl(website.url);
+
+    if (isValidUrl(website.url) === false) {
+      addMessage("warning", "Invalid URL", website.url);
+      return;
+    }
+
     const model: Omit<Website, "id"> = {
       folderName: website.folderName,
       title: website.title,
-      url: website.url,
+      url: trimUrl(website.url),
       favicon: website.favicon,
       status: website.status,
       createdAt: Date.now(),
@@ -102,7 +98,6 @@ class AppController {
         showAll: false,
       });
     } else {
-      console.log("lol");
       folder.websites.push(res.data);
       this.folders.set(model.folderName, { ...folder });
     }
@@ -115,33 +110,33 @@ class AppController {
   ) {
     const folder = this.folders.get(folderName);
     if (!folder) return;
-  
-    // const website = folder.websites.find((w) => w.id === websiteId);    <----- OLD WAY 
+
+    // const website = folder.websites.find((w) => w.id === websiteId);    <----- OLD WAY
     const websiteIndex = folder.websites.findIndex((w) => w.id === websiteId);
-  
+
     if (websiteIndex === -1) {
       return;
     }
-  
+
     const originalWebsite = folder.websites[websiteIndex];
     const temp = originalWebsite.status;
-  
+
     // Create a NEW website object with the updated status
     const updatedWebsite = { ...originalWebsite, status }; //Create a copy and set it to the new status, instead of assigning it!
-  
+
     const res = await this.websiteRepository.update(updatedWebsite);
     if (!res.success) {
       originalWebsite.status = temp;
       addMessage("warning", res.error);
     }
-  
+
     // Ensure this returns a *new* array with the updated website
     const newWebsites = [
       ...folder.websites.slice(0, websiteIndex),
       updatedWebsite,
       ...folder.websites.slice(websiteIndex + 1),
     ];
-  
+
     this.folders.set(folderName, { ...folder, websites: newWebsites }); // Force Reactivity
   }
 

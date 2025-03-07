@@ -1,3 +1,5 @@
+import { trimUrl } from "./utils";
+
 export type ChromePage = {
   title: string;
   url: string;
@@ -9,7 +11,7 @@ export async function getCurrentPage(): Promise<ChromePage | undefined> {
       if (tabs.length > 0 && tabs[0].url) {
         resolve({
           title: tabs[0].title || "Unknown",
-          url: tabs[0].url,
+          url: trimUrl(tabs[0].url),
           favicon: tabs[0].favIconUrl || "",
         });
       } else {

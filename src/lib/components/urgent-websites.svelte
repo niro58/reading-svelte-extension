@@ -1,8 +1,9 @@
 <script lang="ts">
-  import { AlertCircle } from "lucide-svelte";
+  import { AlertCircle, Archive, BookOpen } from "lucide-svelte";
   import { ReadingStatus, type Website } from "../types";
   import { Badge } from "./ui/badge";
   import { getApp } from "$lib/app_controller.svelte";
+  import Button from "./ui/button/button.svelte";
 
   const app = getApp();
 
@@ -44,9 +45,25 @@
             />
             <span class="truncate text-sm">{website.title}</span>
           </div>
-          <Badge variant="outline" class="text-xs">
-            {website.folderName}
-          </Badge>
+          <div class="flex flex-row gap-2">
+            <Badge variant="outline" class="text-xs">
+              {website.folderName}
+            </Badge>
+            <Button
+              onclick={() => {
+                app.updateWebsiteStatus(
+                  website.folderName,
+                  website.id,
+                  ReadingStatus.ARCHIVED
+                );
+              }}
+              variant="outline_green"
+              size="icon"
+              class="h-6 w-6 flex-shrink-0"
+            >
+              <Archive class="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       </div>
     </a>
