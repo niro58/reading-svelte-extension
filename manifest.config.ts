@@ -12,9 +12,9 @@ const [major, minor, patch] = version
 
 export default defineManifest(async () => ({
   manifest_version: 3,
-  name: "Reader",
+  name: "ReadVault - Bookmark. Organize. Thrive",
   description:
-    "Block distracting websites and boost your productivity. Add domains and block current pages all in one easy-to-use Chrome extension.",
+    "ReadVault is an extension that acts as your digital reading vault. Save and organize pages in one place for easy access anytime.",
   version: `${major}.${minor}.${patch}`,
   version_name: version,
   icons: {
@@ -35,11 +35,7 @@ export default defineManifest(async () => ({
       "128": "src/assets/icons/icon-128.png",
     },
   },
-  permissions: [
-    "webNavigation",
-    "storage",
-    "tabs",
-  ] as chrome.runtime.ManifestPermissions[],
-
+  permissions: ["tabs"] as chrome.runtime.ManifestPermissions[],
+  //used for hot reload to work, disable on prod
   host_permissions: ["<all_urls>"],
 }));

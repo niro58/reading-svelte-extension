@@ -30,36 +30,44 @@
 {/if}
 <div class="flex flex-col gap-2">
   {#each archivedWebsites as website}
-    <div class="border rounded-md p-2">
-      <div class="flex items-center justify-between">
-        <div class="flex items-center overflow-hidden">
-          <img
-            src={website.favicon || "/placeholder.svg"}
-            alt=""
-            class="h-4 w-4 mr-2 flex-shrink-0"
-          />
-          <span class="truncate text-sm">{website.title}</span>
-        </div>
-        <div class="flex flex-row gap-2">
-          <Badge variant="outline" class="text-xs">
-            {website.folderName}
-          </Badge>
-          <Button
-            onclick={() => {
-              app.updateWebsiteStatus(
-                website.folderName,
-                website.id,
-                ReadingStatus.TO_READ
-              );
-            }}
-            variant="outline_blue"
-            size="icon"
-            class="h-6 w-6 flex-shrink-0"
-          >
-            <BookOpen class="h-4 w-4" />
-          </Button>
+    <a
+      href={website.url}
+      target="_blank"
+      class="transition-colors hover:bg-primary/50 active:bg-primary/80"
+    >
+      <div class="border rounded-md p-2">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center overflow-hidden">
+            <img
+              src={website.favicon || "/placeholder.svg"}
+              alt=""
+              class="h-4 w-4 mr-2 flex-shrink-0"
+            />
+            <span class="truncate text-sm">{website.title}</span>
+          </div>
+          <div class="flex flex-row gap-2">
+            <Badge variant="outline" class="text-xs">
+              {website.folderName}
+            </Badge>
+            <Button
+              onclick={(e) => {
+                e.preventDefault();
+
+                app.updateWebsiteStatus(
+                  website.folderName,
+                  website.id,
+                  ReadingStatus.TO_READ
+                );
+              }}
+              variant="outline_blue"
+              size="icon"
+              class="h-6 w-6 flex-shrink-0"
+            >
+              <BookOpen class="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       </div>
-    </div>
+    </a>
   {/each}
 </div>

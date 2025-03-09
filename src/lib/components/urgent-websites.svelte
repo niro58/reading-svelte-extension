@@ -33,6 +33,7 @@
   {#each urgentWebsites as website}
     <a
       href={website.url}
+      target="_blank"
       class="transition-colors hover:bg-primary/50 active:bg-primary/80"
     >
       <div class="border rounded-md p-2">
@@ -50,7 +51,8 @@
               {website.folderName}
             </Badge>
             <Button
-              onclick={() => {
+              onclick={(e) => {
+                e.preventDefault();
                 app.updateWebsiteStatus(
                   website.folderName,
                   website.id,

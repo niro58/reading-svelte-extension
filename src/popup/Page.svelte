@@ -26,13 +26,14 @@
     status: ReadingStatus.TO_READ,
     folderName: "",
   });
+
+  //todo: select first folder by default
 </script>
 
 <div
   class="w-[350px] h-[500px] flex flex-col bg-background text-foreground overflow-hidden p-3"
 >
   <CurrentPage />
-
   <div class="py-4 border-b flex items-center justify-between">
     <h1 class="text-lg font-semibold">Reading List</h1>
     <div class="flex gap-2">
@@ -74,7 +75,7 @@
                   <Select.Trigger>
                     {newWebsite.folderName}
                   </Select.Trigger>
-                  <Select.Content>
+                  <Select.Content class="max-h-[150px]">
                     {#each app!.folders as [name]}
                       <Select.Item value={name}>
                         {name}
@@ -113,7 +114,7 @@
       <Tabs.Trigger value="all">All</Tabs.Trigger>
       <Tabs.Trigger value="urgent">Urgent</Tabs.Trigger>
       <Tabs.Trigger value="read">Archive</Tabs.Trigger>
-      <Tabs.Trigger value="faq">FAQ</Tabs.Trigger>
+      <!-- <Tabs.Trigger value="faq">FAQ</Tabs.Trigger> -->
     </Tabs.List>
 
     <ScrollArea class="h-[300px]">
@@ -126,11 +127,14 @@
       <Tabs.Content value="read" class="flex-1 overflow-hidden space-y-2">
         <ArchivedWebsites />
       </Tabs.Content>
-      <Tabs.Content value="faq" class="flex-1 overflow-hidden">
+      <!-- <Tabs.Content value="faq" class="flex-1 overflow-hidden">
         <Faq />
-      </Tabs.Content>
+      </Tabs.Content> -->
       <div class="py-4"></div>
     </ScrollArea>
   </Tabs.Root>
 </div>
-<div class="mt-2 px-2" id="messages"></div>
+<div
+  class="mt-2 px-2 h-32 flex flex-col-reverse items-stretch justify-start absolute bottom-0 w-full"
+  id="messages"
+></div>

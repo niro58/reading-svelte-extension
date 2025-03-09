@@ -126,7 +126,7 @@
                 <Select.Trigger
                   >{selectedFolder || "Select a folder"}</Select.Trigger
                 >
-                <Select.Content>
+                <Select.Content class="max-h-[150px]">
                   {#each app.folders as [name]}
                     <Select.Item value={name}>
                       {name}

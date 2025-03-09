@@ -9,7 +9,6 @@ export const blankWebsite: Omit<Website, "id" | "createdAt"> = {
   folderName: "",
   title: "",
   url: "",
-  favicon: "/placeholder.svg?height=16&width=16",
   status: ReadingStatus.TO_READ,
 };
 //todo: rewrite to an array solution, didnt expect sveltemap to be that weird
